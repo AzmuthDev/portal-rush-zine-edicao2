@@ -103,4 +103,13 @@
   .editorial__photo-frame {
     aspect-ratio: 16 / 10;
   }
+
+  .editorial__text-col {
+    align-items: center;
+    text-align: center;
+  }
+
+  .editorial__body p {
+    text-align: center;
+  }
 }

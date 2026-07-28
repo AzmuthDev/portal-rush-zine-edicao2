@@ -1,0 +1,7 @@
+node_modules
+.git
+src
+*.pdf
+screencapture*
+halide.aura.build.zip
+halide.aura.build

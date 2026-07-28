@@ -715,9 +715,11 @@ border-bottom-color: var(--hair);
 /* narrow screens: the two eyebrows (one anchored left, one right) collide,
 so stack the count under the label instead of letting them overlap */
 @media (max-width: 620px) {
-.hero-label, .hero-count { font-size: 0.6rem; letter-spacing: 0.08em; white-space: nowrap; }
+.hero-label, .hero-count { font-size: 0.6rem; letter-spacing: 0.08em; white-space: nowrap; left: 0; right: 0; text-align: center; width: 100%; }
 .hero-label { top: 5.6rem; }
-.hero-count { top: 7.1rem; left: var(--pad); right: auto; }
+.hero-count { top: 7.1rem; }
+.hero-foot { align-items: center; text-align: center; }
+.hero-desc { text-align: center; margin: 0 auto; }
 }
 /* Syne 800 is a WIDE face. Title is centered perfectly. */
 .hero h1 { position: relative; z-index: 3; font-weight: 800; text-transform: uppercase; font-size: clamp(2.3rem, 11.2vw, 12.5rem); line-height: 0.9; letter-spacing: 0.005em; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; }
@@ -1916,7 +1918,8 @@ if (!reduceMotion) {
   };
   thumbEls.forEach((t, i) => t.addEventListener('click', () => select(i)));
 
-  if (stage && !reduceMotion) {
+  const desktop = window.matchMedia('(min-width: 900px)').matches;
+  if (stage && !reduceMotion && desktop) {
     const s = CONFIG.dollyStart;
     gsap.set(mask, { scale: s });
     gsap.set(img, { scale: 1 / s });
@@ -1977,8 +1980,16 @@ if (!reduceMotion) {
       // … then a full-bleed HOLD fills the rest of the pin before release
       .to({}, { duration: 0.38 }, 0.62);
   } else {
-    // reduced-motion: thumbnails shown + clickable, no reveal choreography
+    // reduced-motion or mobile: thumbnails shown + clickable, no reveal choreography
     thumbsWrap.style.pointerEvents = 'auto';
+    if (stage && (!window.matchMedia('(min-width: 900px)').matches || reduceMotion)) {
+      gsap.set(mask, { scale: 1 });
+      gsap.set(img, { scale: 1, filter: 'grayscale(0) contrast(1.02)' });
+      gsap.set(scrim, { opacity: 1 });
+      gsap.set(lines, { yPercent: 0 });
+      gsap.set(head, { autoAlpha: 1 });
+      gsap.set('.roll-thumbs > *', { autoAlpha: 1, x: 0 });
+    }
   }
 }
 

@@ -126,4 +126,16 @@
   .park__features {
     grid-template-columns: 1fr;
   }
+  
+  .park__inner, .park__closing {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .park__feature-card {
+    align-items: center;
+    text-align: center;
+  }
 }

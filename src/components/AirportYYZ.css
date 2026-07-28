@@ -237,4 +237,21 @@
   .boarding-pass__code {
     font-size: 3rem;
   }
+
+  .boarding-pass__header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-md);
+  }
+
+  .boarding-pass__main {
+    align-items: center;
+    text-align: center;
+  }
+
+  .boarding-pass__fields {
+    justify-items: center;
+    text-align: center;
+  }
 }
