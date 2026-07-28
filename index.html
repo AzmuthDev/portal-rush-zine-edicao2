@@ -933,6 +933,25 @@ footer { border-top: 1px solid var(--hair); overflow: hidden; }
 #avail .pulse, .cta-avail .pulse { animation: none; }
 [data-fade] { opacity: 1 !important; transform: none !important; }
 }
+/* Numeracao das Dobras */
+main { counter-reset: section-counter; }
+main > section { position: relative; counter-increment: section-counter; }
+main > section::before {
+  content: counter(section-counter, decimal-leading-zero);
+  position: absolute;
+  top: clamp(4rem, 8vh, 6rem);
+  left: var(--pad);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--red);
+  z-index: 50;
+  pointer-events: none;
+}
+@media (max-width: 620px) {
+  #ontario-assembly .ab-title { font-size: 1.6rem; margin-left: 1.5rem; }
+  #airport-yyz .ab-title { font-size: 1.6rem; margin-left: 1.5rem; }
+  #henderson-brewing .ab-title { font-size: 1.5rem; }
+}
 </style>
 <script src="assets/176e894661aa9cdc_3.4.17"></script>
 <style>
@@ -1300,7 +1319,7 @@ a.nav-here, .m-name, .cta-btn, .feat-end-cta {
 </section>
 <!-- ░░ ROLL 01 — the dolly develop: frame opens, print develops to color ░░ -->
 <section class="roll" id="roll-01">
-<div class="pin-spacer" style="order: 0; place-self: auto; grid-area: auto; z-index: auto; float: none; flex-shrink: 1; display: block; margin: 0px; inset: 0px; position: relative; flex-basis: auto; overflow: visible; box-sizing: border-box; width: 1920px; height: 3240px; padding: 0px 0px 2160px;"><div class="roll-stage" style="translate: none; rotate: none; scale: none; inset: 0px auto auto 0px; margin: 0px; max-width: 1920px; width: 1920px; max-height: 1080px; height: 1080px; padding: 0px; transform: translate(0px, 0px);">
+<div class="roll-stage">
 <div class="roll-mask" style="translate: none; rotate: none; scale: none; transform: scale(0.34, 0.34);">
 <img alt="Roll 01 — mountain ridge at dusk" class="roll-img" decoding="async" loading="lazy" src="assets/b1231e2878f31c42_photo-1506905925346-21bda4d32d.avif" style="translate: none; rotate: none; scale: none; transform: scale(2.9412, 2.9412); filter: grayscale(1) contrast(1.05);"/>
 <img alt="" aria-hidden="true" class="roll-swap"/>
@@ -1322,11 +1341,11 @@ a.nav-here, .m-name, .cta-btn, .feat-end-cta {
 <p class="roll-facts mono"><span class="line-mask"><span class="line" style="translate: none; rotate: none; scale: none; transform: translate(0%, 115%);">ALPS, CH — 2025 · 36 FRAMES · COMMISSIONED</span></span></p>
 <p class="roll-desc"><span class="line-mask"><span class="line" style="translate: none; rotate: none; scale: none; transform: translate(0%, 115%);">Lançado em 1981, este álbum vendeu mais de 5 milhões de cópias.</span></span><span class="line-mask"><span class="line" style="translate: none; rotate: none; scale: none; transform: translate(0%, 115%);">É o momento em que a complexidade do prog rock e a acessibilidade do rádio colidiram.</span></span></p>
 </div>
-</div></div>
+</div>
 </section>
 <!-- ░░ SELECTED WORK — 3 lead frames reveal from the bottom, then the same
      section scrolls horizontally through them + more frames ░░ -->
-<div class="pin-spacer" style="order: 0; place-self: auto; grid-area: auto; z-index: auto; float: none; flex-shrink: 1; display: flex; margin: 0px; inset: auto; position: relative; flex-basis: auto; overflow: visible; box-sizing: border-box; width: 1920px; height: 4608px; padding: 0px 0px 3528px;"><section aria-label="Selected work from the archive" class="is-pinned" id="featured" style="translate: none; rotate: none; scale: none; inset: 0px auto auto 0px; margin: 0px; max-width: 1920px; width: 1920px; max-height: 1080px; height: 1080px; padding: 75.6px 0px 0px; transform: translate(0px, 0px);">
+<section aria-label="Selected work from the archive" id="featured">
 <div class="feat-head">
 <div class="feat-head-l">
 <p class="mono dim" data-decode="" data-text="ENGENHARIA DE SOM / YYZ">ENGENHARIA DE SOM / YYZ</p>
@@ -1398,7 +1417,7 @@ a.nav-here, .m-name, .cta-btn, .feat-end-cta {
 </a>
 </div>
 </div>
-</section></div>
+</section>
 <!-- ░░ ABOUT teaser — who's behind the lens ░░ -->
 
 <section id="airport-yyz" class="roll-section" style="padding: clamp(3rem, 10vh, 10rem) var(--pad);">
@@ -1461,7 +1480,7 @@ a.nav-here, .m-name, .cta-btn, .feat-end-cta {
 <section id="ontario-assembly" class="roll-section" style="padding: clamp(3rem, 10vh, 10rem) var(--pad);">
   <div class="ab-grid" style="direction: rtl;">
     <div class="ab-portrait" style="clip-path: none; direction: ltr;">
-       <video src="videos/massey-hall-video.mp4" autoPlay loop muted playsInline style="width: 100%; height: 100%; object-fit: cover; filter: grayscale(0.8) contrast(1.1);"></video>
+       <video src="videos/massey-hall-video.mp4" autoPlay loop muted playsInline style="width: 100%; height: 100%; object-fit: cover;"></video>
     </div>
     <div class="ab-copy" style="direction: ltr;">
        <p class="mono dim sec-label" data-decode="" data-text="04 — A CAPA">04 — A CAPA</p>
