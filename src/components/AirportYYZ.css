@@ -1,0 +1,240 @@
+/* ═══ AIRPORT YYZ SECTION ═══ */
+
+.airport {
+  background: var(--vantablack);
+  padding: var(--space-3xl) var(--space-lg);
+}
+
+.airport__inner {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Boarding Pass Card */
+.boarding-pass {
+  position: relative;
+  background: linear-gradient(135deg, rgba(18, 18, 18, 0.95), rgba(8, 8, 8, 0.98));
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  overflow: hidden;
+  padding: 0;
+}
+
+/* Perforated edge effect */
+.boarding-pass::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 260px;
+  width: 1px;
+  height: 100%;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--silver-dark) 0px,
+    var(--silver-dark) 4px,
+    transparent 4px,
+    transparent 12px
+  );
+  opacity: 0.3;
+}
+
+.boarding-pass__layout {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+}
+
+/* Main section */
+.boarding-pass__main {
+  padding: var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.boarding-pass__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.boarding-pass__airline {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--silver-dark);
+}
+
+.boarding-pass__code {
+  font-family: var(--font-display);
+  font-size: 4.5rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -2px;
+}
+
+.boarding-pass__airport-name {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 300;
+  color: var(--silver-dark);
+  margin-top: var(--space-xs);
+}
+
+.boarding-pass__fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-md);
+}
+
+.boarding-pass__field-label {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--silver-dark);
+  margin-bottom: var(--space-xs);
+}
+
+.boarding-pass__field-value {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--silver-bright);
+}
+
+/* Stub (right side) */
+.boarding-pass__stub {
+  padding: var(--space-xl) var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.boarding-pass__stub-code {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-weight: 800;
+  writing-mode: vertical-rl;
+  letter-spacing: 4px;
+}
+
+/* Morse Code Animation */
+.morse {
+  margin-top: var(--space-xl);
+  text-align: center;
+}
+
+.morse__title {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  color: var(--silver-dark);
+  margin-bottom: var(--space-lg);
+}
+
+.morse__sequence {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.morse__dot, .morse__dash {
+  height: 4px;
+  border-radius: 2px;
+  opacity: 0.3;
+  animation: morse-pulse 3.6s ease-in-out infinite;
+}
+
+.morse__dot {
+  width: 8px;
+  background: var(--silver-bright);
+}
+
+.morse__dash {
+  width: 24px;
+  background: var(--silver-bright);
+}
+
+.morse__space {
+  width: 16px;
+}
+
+.morse__letter-space {
+  width: 10px;
+}
+
+/* Staggered pulse timing for each element */
+.morse__dot:nth-child(1), .morse__dash:nth-child(1) { animation-delay: 0s; }
+.morse__dot:nth-child(2), .morse__dash:nth-child(2) { animation-delay: 0.15s; }
+.morse__dot:nth-child(3), .morse__dash:nth-child(3) { animation-delay: 0.3s; }
+.morse__dot:nth-child(4), .morse__dash:nth-child(4) { animation-delay: 0.45s; }
+.morse__dot:nth-child(5), .morse__dash:nth-child(5) { animation-delay: 0.6s; }
+.morse__dot:nth-child(6), .morse__dash:nth-child(6) { animation-delay: 0.75s; }
+.morse__dot:nth-child(7), .morse__dash:nth-child(7) { animation-delay: 0.9s; }
+.morse__dot:nth-child(8), .morse__dash:nth-child(8) { animation-delay: 1.05s; }
+.morse__dot:nth-child(9), .morse__dash:nth-child(9) { animation-delay: 1.2s; }
+.morse__dot:nth-child(10), .morse__dash:nth-child(10) { animation-delay: 1.35s; }
+.morse__dot:nth-child(11), .morse__dash:nth-child(11) { animation-delay: 1.5s; }
+.morse__dot:nth-child(12), .morse__dash:nth-child(12) { animation-delay: 1.65s; }
+.morse__dot:nth-child(13), .morse__dash:nth-child(13) { animation-delay: 1.8s; }
+
+@keyframes morse-pulse {
+  0%, 100% { opacity: 0.15; }
+  15% { opacity: 1; box-shadow: 0 0 8px rgba(255, 255, 255, 0.6); }
+  30% { opacity: 0.15; }
+}
+
+.morse__description {
+  margin-top: var(--space-xl);
+  max-width: 650px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.morse__description p {
+  font-size: 1rem;
+  font-weight: 300;
+  color: var(--silver-mid);
+  line-height: 1.8;
+  text-align: center;
+}
+
+.morse__description p strong {
+  color: var(--silver-bright);
+  font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .boarding-pass__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .boarding-pass::before {
+    display: none;
+  }
+
+  .boarding-pass__stub {
+    writing-mode: initial;
+    padding: var(--space-lg);
+    border-top: 1px dashed rgba(255, 255, 255, 0.1);
+  }
+
+  .boarding-pass__stub-code {
+    writing-mode: initial;
+    font-size: 2rem;
+  }
+
+  .boarding-pass__code {
+    font-size: 3rem;
+  }
+}

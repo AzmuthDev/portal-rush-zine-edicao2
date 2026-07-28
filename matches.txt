@@ -1,0 +1,11 @@
+/* ═══ PORTAL RUSH THEME — Vantablack + Silver + Neon Red ═══ */
+---
+<span id="loader-mark">PORTAL RUSH</span>
+---
+" style="cursor: none;"><span class="mark"></span>PORTAL RUSH</a>
+---
+<span class="wordmark"><span class="mark"></span>PORTAL RUSH</span>
+---
+<div aria-hidden="true" class="foot-mark">PORTAL RUSH<span style="color:var(--red);opacity:.3">●</span>
+---
+<p>PORTAL RUSH ZINE © 2026</p>

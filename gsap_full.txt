@@ -1,0 +1,626 @@
+/* ═══════════════════════════════════════════════════════════════
+   HALIDE — HOME · TUNING
+   ═══════════════════════════════════════════════════════════════ */
+const CONFIG = {
+  scrollLerp: 0.09,        // Lenis weight — lower = heavier
+  ease: 'expo.out',        // ONE easing personality
+  loaderDuration: 1.4,     // roll count-up time (s)
+  dollyStart: 0.34,        // roll frame's initial size
+  dollyLength: '+=200%',   // scroll consumed by the roll pin
+  rollHold: 0.5,           // forced pause (s) on the full-bleed frame
+  featHold: 0.5,           // forced pause (s) after Selected Work pins, before the track scrubs
+  marqueeDuration: 26      // recognition logo marquee loop (s)
+};
+
+gsap.registerPlugin(ScrollTrigger);
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const finePointer = window.matchMedia('(pointer:fine)').matches;
+
+/* ── LENIS ↔ SCROLLTRIGGER — one position, one clock ── */
+const lenis = new Lenis({ lerp: CONFIG.scrollLerp });
+lenis.on('scroll', ScrollTrigger.update);
+gsap.ticker.add((t) => lenis.raf(t * 1000));
+gsap.ticker.lagSmoothing(0);
+
+/* ── SCROLL LOCK — three things freeze the scroll on this page: the menu
+   overlay, the roll's full-bleed catch, and Selected Work's snap hold. The
+   two timed holds release on a delayedCall, so a bare lenis.start() would
+   hand scrolling back while the menu is still open. Count the owners
+   instead: scroll only resumes when the last one lets go. ── */
+const scrollLock = (() => {
+  const owners = new Set();
+  return {
+    lock(owner)   { if (!owners.size) lenis.stop();  owners.add(owner); },
+    unlock(owner) { if (!owners.delete(owner)) return; if (!owners.size) lenis.start(); }
+  };
+})();
+
+/* loop handles + clamp — declared BEFORE any scroll handler runs:
+   the handler fires on the first ticker frame, and touching a `let`
+   before its declaration executes would crash the whole ticker */
+let mqTl = null;           // recognition logo marquee
+const spaceFlights = [];   // hero fly-through timelines (filled later)
+
+/* ── DECODE — scramble/teletype for mono labels ── */
+const GLYPHS = '█▓▒░ABCDEFGHIKLMNOPRSTUVXZ0123456789·/—';
+function decode(el, { duration = 0.9, delay = 0 } = {}) {
+  const final = el.dataset.text ?? el.textContent;
+  el.dataset.text = final;
+  if (reduceMotion) { el.textContent = final; return null; }
+  const st = { p: 0 };
+  return gsap.to(st, {
+    p: 1, duration, delay, ease: 'none',
+    onUpdate() {
+      const reveal = Math.floor(st.p * final.length);
+      let out = '';
+      for (let i = 0; i < final.length; i++) {
+        const ch = final[i];
+        out += (ch === ' ' || i < reveal) ? ch : GLYPHS[(Math.random() * GLYPHS.length) | 0];
+      }
+      el.textContent = out;
+    },
+    onComplete() { el.textContent = final; }
+  });
+}
+document.querySelectorAll('[data-decode]').forEach((el) => {
+  el.dataset.text = el.textContent;
+  if (reduceMotion) return;
+  ScrollTrigger.create({ trigger: el, start: 'top 88%', once: true, onEnter: () => decode(el) });
+});
+
+/* ── LOADER — skipped on repeat visits this session ── */
+const seen = sessionStorage.getItem('halide_seen');
+if (!reduceMotion && !seen) document.body.style.overflow = 'hidden';
+
+/* if the page opens in a background tab, rAF is suspended — hold the
+   intro until the tab is actually visible so it never plays unseen
+   (and never trips the fail-safe while hidden) */
+const whenVisible = document.hidden
+  ? new Promise((r) => document.addEventListener('visibilitychange', function h() {
+      if (!document.hidden) { document.removeEventListener('visibilitychange', h); r(); }
+    }))
+  : Promise.resolve();
+
+Promise.all([document.fonts.ready, whenVisible]).then(() => {
+  const loader = document.getElementById('loader');
+  const frameEl = document.getElementById('loader-frame');
+  const dotEl = document.querySelector('.hero-dot');
+
+  const reveal = () => {
+    window.__halideIntroDone = true;
+    document.body.style.overflow = '';
+    sessionStorage.setItem('halide_seen', '1');
+  };
+
+  if (reduceMotion) { loader.style.display = 'none'; reveal(); return; }
+
+  // pre-hide the WORDS (never the dot) so nothing pops when the panel
+  // clears — they'll rise in around the dot afterwards
+  const words = heroLetters().filter((c) => !c.classList.contains('hero-dot'));
+  gsap.set(words, { yPercent: 118, filter: 'blur(6px)' });
+
+  /* THE MORPH — the full accent panel collapses (clip-path circle) down
+     onto the hero dot's exact centre + radius, so it visually *becomes*
+     that dot. The real dot sits underneath, same colour, for a seamless
+     handoff; then the panel is removed. */
+  const collapse = (quick) => {
+    const r = dotEl.getBoundingClientRect();
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2, dotR = r.width / 2;
+    const bigR = Math.hypot(Math.max(cx, innerWidth - cx), Math.max(cy, innerHeight - cy)) * 1.05;
+    const p = { r: bigR };
+    loader.style.clipPath = `circle(${bigR}px at ${cx}px ${cy}px)`;
+    return gsap.timeline()
+      .to('.loader-inner', { autoAlpha: 0, duration: 0.3, ease: 'power2.in' }, 0)
+      .to(p, {
+        r: dotR, duration: quick ? 0.7 : 1.05, ease: 'expo.inOut',
+        onUpdate: () => { loader.style.clipPath = `circle(${p.r}px at ${cx}px ${cy}px)`; }
+      }, 0.12)
+      .set(loader, { display: 'none' });
+  };
+
+  const tl = gsap.timeline({ onComplete: reveal });
+  if (!seen) {
+    const frame = { v: 0 };
+    tl.to(frame, {
+      v: 36, duration: CONFIG.loaderDuration, ease: 'power2.inOut',
+      onUpdate: () => frameEl.textContent = 'LOADING ROLL — FRAME ' + String(Math.round(frame.v)).padStart(2, '0') + ' / 36'
+    });
+  }
+  tl.add(collapse(!!seen), seen ? 0 : '+=0.1')
+    .add(heroRise, '-=0.35');
+});
+
+/* Split each hero line into letter cells once, up front (while the
+   loader still covers the screen) so the split can never be seen. The
+   .red dot stays a single cell. */
+function splitHero() {
+  document.querySelectorAll('.hero-line[data-split]').forEach((line) => {
+    const cells = [];
+    [...line.childNodes].forEach((node) => {
+      if (node.nodeType === 3) {                       // text → one cell per char
+        const frag = document.createDocumentFragment();
+        [...node.textContent].forEach((ch) => {
+          const s = document.createElement('span');
+          s.className = 'hl-ch'; s.textContent = ch;
+          frag.appendChild(s); cells.push(s);
+        });
+        line.replaceChild(frag, node);
+      } else if (node.nodeType === 1) {                // the .red dot → its own cell
+        node.classList.add('hl-ch'); cells.push(node);
+      }
+    });
+    line._cells = cells;
+  });
+}
+splitHero();
+
+function heroLetters() {
+  const a = [];
+  document.querySelectorAll('.hero-line[data-split]').forEach((l) => a.push(...(l._cells || [])));
+  return a;
+}
+/* hero entrance — the words rise out of their masks AROUND the dot (the
+   loader has already collapsed into that dot, so it stays put as the
+   seed). Per-letter masked rise with a hair of blur, cascading. */
+function heroRise() {
+  if (reduceMotion) return;
+  const words = heroLetters().filter((c) => !c.classList.contains('hero-dot'));
+  gsap.timeline({ defaults: { ease: 'expo.out' } })
+    .to(words, { yPercent: 0, filter: 'blur(0px)', duration: 1.2, stagger: 0.045 })
+    .from('.hero-foot', { y: 24, autoAlpha: 0, duration: 0.9 }, '-=0.72');
+}
+
+/* ── PAGE TRANSITION — curtain out on internal nav clicks ── */
+const PAGES = ['index.html', 'work.html', 'project.html', 'about.html', 'journal.html', 'contact.html'];
+document.querySelectorAll('a[href]').forEach((a) => {
+  const href = a.getAttribute('href');
+  if (!PAGES.includes(href)) return;
+  a.addEventListener('click', (e) => {
+    const curtain = document.getElementById('curtain');
+    const curtainLabel = document.getElementById('curtain-label');
+    // If the animated transition can't run, let the browser follow the link
+    // natively — never cancel a navigation we can't finish (hosted/sandboxed).
+    if (reduceMotion || typeof gsap === 'undefined' || !curtain || !curtainLabel) return;
+    e.preventDefault();
+    let navigated = false;
+    const go = () => { if (navigated) return; navigated = true; location.href = href; };
+    try {
+      curtainLabel.textContent = href.replace('.html', '').replace('index', 'home').toUpperCase();
+      gsap.timeline({ onComplete: go })
+        .set('#curtain', { display: 'flex', yPercent: 101 })
+        .to('#curtain', { yPercent: 0, duration: 0.55, ease: 'expo.inOut' })
+        .add(() => decode(curtainLabel, { duration: 0.4 }), '-=0.3');
+      setTimeout(go, 1500);   // safety net if the timeline never completes
+    } catch (err) { go(); }
+  });
+});
+
+/* ── HEADER GLASS + CLOCK + RAIL ── */
+const headerEl = document.getElementById('site-header');
+const railFill = document.querySelector('.rail-fill');
+const railDot = document.querySelector('.rail-dot');
+const railRead = document.getElementById('rail-read');
+const railH = () => document.querySelector('.rail-line').offsetHeight;
+if (finePointer) document.getElementById('rail').style.display = 'flex';
+
+lenis.on('scroll', (e) => {
+  const p = e.progress || 0;
+  headerEl.classList.toggle('is-scrolled', (e.scroll || 0) > 40);
+  if (railFill) {
+    railFill.style.transform = `scaleY(${p})`;
+    railDot.style.transform = `translateY(${p * railH()}px)`;
+    railRead.textContent = 'FRAME ' + String(Math.round(p * 36)).padStart(2, '0') + ' / 36';
+  }
+  if (reduceMotion) return;
+  if (mqTl) mqTl.timeScale((e.direction || 1) * (1 + Math.min(Math.abs(e.velocity || 0) * 0.05, 3)));
+  // scroll energy accelerates the archive flight (never reverses it)
+  if (spaceFlights.length) {
+    const boost = 1 + Math.min(Math.abs(e.velocity || 0) * 0.06, 2.5);
+    spaceFlights.forEach((tl) => tl.timeScale(boost));
+  }
+});
+
+{
+  const clock = document.getElementById('local-clock');
+  const tick = () => {
+    const d = new Date();
+    clock.textContent = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ' LOCAL';
+  };
+  tick(); setInterval(tick, 30000);
+}
+
+/* ── MENU OVERLAY ── */
+{
+  const overlay = document.getElementById('menu-overlay');
+  const openBtn = document.getElementById('menu-btn');
+  const closeBtn = document.getElementById('menu-close');
+  const links = overlay.querySelectorAll('.menu-links a');
+  let open = false;
+  const show = () => {
+    if (open) return; open = true;
+    openBtn.setAttribute('aria-expanded', 'true');
+    overlay.setAttribute('aria-hidden', 'false');
+    scrollLock.lock('menu');
+    if (reduceMotion) { gsap.set(overlay, { autoAlpha: 1 }); return; }
+    gsap.timeline({ defaults: { ease: CONFIG.ease } })
+      .to(overlay, { autoAlpha: 1, duration: 0.4 })
+      .fromTo(links, { y: 60, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.75, stagger: 0.06 }, '-=0.12');
+  };
+  const hide = () => {
+    if (!open) return; open = false;
+    openBtn.setAttribute('aria-expanded', 'false');
+    overlay.setAttribute('aria-hidden', 'true');
+    scrollLock.unlock('menu');
+    gsap.to(overlay, { autoAlpha: 0, duration: reduceMotion ? 0 : 0.3, ease: 'power2.in' });
+  };
+  openBtn.addEventListener('click', show);
+  closeBtn.addEventListener('click', hide);
+  overlay.querySelectorAll('a').forEach((a) => a.addEventListener('click', hide));
+  window.addEventListener('keydown', (e) => { if (e.key === 'Escape') hide(); });
+}
+
+/* ── ARCHIVE FLY-THROUGH — frames drift toward the camera in 3D.
+   Each plane runs its own journey: born far away (z −1600) as a dim
+   grayscale ghost, it develops into color as it nears the viewer,
+   then fades past the lens and respawns somewhere new. The whole
+   space tilts with the pointer; scroll velocity accelerates the
+   flight. Runs on touch too (no pointer required).             ── */
+if (!reduceMotion) {
+  const tiltEl = document.querySelector('.space-tilt');
+  const SPACE = [
+    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=500&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=500&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?q=80&w=500&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?q=80&w=500&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=500&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?q=80&w=500&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=500&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?q=80&w=500&auto=format&fit=crop'
+  ];
+  SPACE.forEach((u) => { const i = new Image(); i.src = u; }); // pre-warm
+
+  const COUNT = window.matchMedia('(max-width: 700px)').matches ? 5 : 9;
+  let imgIdx = 0;
+
+  // each plane's flight is its own curved trajectory + size, so no two
+  // move alike; the inner cell floats independently on top of that.
+  const fly = (outer, cell, first, slot) => {
+    const startX = gsap.utils.random(0, 1) < 0.5 ? gsap.utils.random(4, 32) : gsap.utils.random(68, 96);
+    const startY = gsap.utils.random(6, 84);
+    outer.style.left = startX + '%';
+    outer.style.top = startY + '%';
+    cell.style.backgroundImage = `url('${SPACE[imgIdx++ % SPACE.length]}')`;
+
+    const dur = gsap.utils.random(10, 15);
+    const scl = gsap.utils.random(0.82, 1.16);          // modest size spread
+    const driftX = gsap.utils.random(-90, 90);          // lateral curve as it nears
+    const driftY = gsap.utils.random(-40, 40);
+    const D = dur;                                       // opacity/filter phase base
+
+    const tl = gsap.timeline({ onComplete: () => fly(outer, cell, false, slot) });
+    tl.fromTo(outer, { z: -1600, x: 0, y: 0, xPercent: -50, yPercent: -50, scale: scl },
+      { z: 340, duration: D, ease: 'none' }, 0)
+      // curved path: the drift eases in so far frames track straight,
+      // then swing as they rush past — reads as depth, not a slide
+      .to(outer, { x: driftX, y: driftY, duration: D, ease: 'power2.in' }, 0)
+      .fromTo(outer, { opacity: 0 }, { opacity: 0.9, duration: 0.26 * D, ease: 'power1.in' }, 0)
+      .to(outer, { opacity: 0, duration: 0.14 * D, ease: 'power2.in' }, '-=' + (0.14 * D))
+      // the print develops as it approaches the lens
+      .to(cell, { filter: 'grayscale(0) brightness(0.92) contrast(1.02)', duration: 0.24 * D, ease: 'power1.inOut' }, '-=' + (0.36 * D))
+      .set(cell, { filter: 'grayscale(1) brightness(0.75) contrast(1.05)' });
+    if (first) tl.progress(Math.random());
+    spaceFlights[slot] = tl;
+  };
+
+  for (let i = 0; i < COUNT; i++) {
+    const outer = document.createElement('div');
+    outer.className = 'space-img';
+    const cell = document.createElement('div');
+    cell.className = 'space-cell';
+    outer.appendChild(cell);
+    tiltEl.appendChild(outer);
+    // independent, endless float on the inner cell — a slow sine sway of
+    // rotation + a breath of drift, desynced per plane, so the frame
+    // feels alive rather than rigidly locked to its flight line
+    gsap.set(cell, { rotation: gsap.utils.random(-5, 5) });
+    gsap.to(cell, {
+      rotation: '+=' + gsap.utils.random(3, 7) * (Math.random() < 0.5 ? -1 : 1),
+      x: gsap.utils.random(-8, 8), y: gsap.utils.random(-8, 8),
+      duration: gsap.utils.random(3.5, 6), ease: 'sine.inOut',
+      yoyo: true, repeat: -1, delay: gsap.utils.random(0, 3)
+    });
+    fly(outer, cell, true, i);
+  }
+
+  // returning to a long-hidden tab completes every flight in one giant
+  // tick and respawns them in sync — re-scatter so the field stays organic
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) spaceFlights.forEach((tl) => tl.progress(Math.random()));
+  });
+
+  // pointer parallax — the whole archive tilts toward the cursor
+  if (finePointer) {
+    const rx = gsap.quickTo(tiltEl, 'rotationX', { duration: 0.9, ease: 'power2.out' });
+    const ry = gsap.quickTo(tiltEl, 'rotationY', { duration: 0.9, ease: 'power2.out' });
+    document.getElementById('hero').addEventListener('mousemove', (e) => {
+      ry((e.clientX / window.innerWidth - 0.5) * 7);
+      rx(-(e.clientY / window.innerHeight - 0.5) * 5);
+    });
+  }
+}
+
+/* ── ROLL 01 — dolly develop (pin + counter-scale + color bloom)
+   + the SHOT-ANGLE selector: three thumbnails swap the hero to a
+   different angle of the same shoot, revealed once it's full-bleed. ── */
+{
+  const stage = document.querySelector('.roll-stage');
+  const mask = document.querySelector('.roll-mask');
+  const img = document.querySelector('.roll-img');
+  const scrim = document.querySelector('.roll-scrim');
+  const lines = document.querySelectorAll('.roll-meta .line');
+  const head = document.querySelector('.roll-head');
+
+  /* ── shot angles (4 total: the hero + 3 alternates) ── */
+  const swap = document.querySelector('.roll-swap');
+  const thumbsWrap = document.querySelector('.roll-thumbs');
+  const thumbEls = gsap.utils.toArray('.roll-thumb');
+  const IDS = ['photo-1506905925346-21bda4d32df4', 'photo-1500534314209-a25ddb2bd429', 'photo-1470071459604-3b5ec3a7fe05', 'photo-1516035069371-29a1b244cc32'];
+  const U = (i, w) => 'https://images.unsplash.com/' + IDS[i] + '?q=80&w=' + w + '&auto=format&fit=crop';
+  IDS.forEach((_, i) => { const im = new Image(); im.src = U(i, 1600); }); // pre-warm hero sizes → no flash on swap
+  let mainIdx = 0;
+  const thumbIdx = [1, 2, 3];                // the three non-hero angles
+  const paint = (i) => {
+    thumbEls[i].querySelector('img').src = U(thumbIdx[i], 320);
+    thumbEls[i].querySelector('.rt-no').textContent = String(thumbIdx[i] + 1).padStart(2, '0');
+  };
+  thumbEls.forEach((_, i) => paint(i));
+
+  // clicking a thumbnail trades it with the hero: the hero crossfades to
+  // that angle, and the thumbnail takes the outgoing hero — so the three
+  // thumbs always show the three angles that aren't currently big.
+  let swapping = false;
+  const select = (i) => {
+    if (swapping || thumbIdx[i] === mainIdx) return;
+    const p = thumbIdx[i], m = mainIdx;
+    mainIdx = p; thumbIdx[i] = m;
+    if (reduceMotion) { img.src = U(p, 1600); paint(i); return; }
+    swapping = true;
+    swap.src = U(p, 1600);
+    gsap.set(swap, { autoAlpha: 0 });
+    gsap.to(swap, { autoAlpha: 1, duration: 0.5, ease: CONFIG.ease, onComplete: () => { img.src = U(p, 1600); gsap.set(swap, { autoAlpha: 0 }); swapping = false; } });
+    const timg = thumbEls[i].querySelector('img');
+    gsap.to(timg, { autoAlpha: 0, duration: 0.2, ease: 'power2.in', onComplete: () => { paint(i); gsap.to(timg, { autoAlpha: 1, duration: 0.35, ease: CONFIG.ease }); } });
+  };
+  thumbEls.forEach((t, i) => t.addEventListener('click', () => select(i)));
+
+  if (stage && !reduceMotion) {
+    const s = CONFIG.dollyStart;
+    gsap.set(mask, { scale: s });
+    gsap.set(img, { scale: 1 / s });
+    gsap.set(lines, { yPercent: 115 });
+    gsap.set(head, { autoAlpha: 0 });
+    gsap.set('.roll-thumbs > *', { autoAlpha: 0, x: 40 });   // hidden until full-bleed
+
+    let bloomed = false;
+    const bloom = (on) => {
+      if (on === bloomed) return; bloomed = on;
+      gsap.to(img, {
+        filter: on ? 'grayscale(0) contrast(1.02)' : 'grayscale(1) contrast(1.05)',
+        duration: on ? 0.9 : 0.5, ease: 'power2.inOut', overwrite: 'auto'
+      });
+    };
+
+    // the angle rail rises in from the right once the frame is full-bleed,
+    // and reverses out if you scroll back up out of the hold
+    let thumbsOn = false;
+    const thumbTl = gsap.timeline({ paused: true })
+      .to('.roll-thumbs > *', { autoAlpha: 1, x: 0, duration: 0.5, stagger: 0.09, ease: CONFIG.ease });
+    const revealThumbs = (on) => {
+      if (on === thumbsOn) return; thumbsOn = on;
+      thumbsWrap.style.pointerEvents = on ? 'auto' : 'none';
+      on ? thumbTl.play() : thumbTl.reverse();
+    };
+
+    // THE FULL-BLEED CATCH — the choreography finishes by ~62% of the pin;
+    // the moment it lands full-bleed we briefly stop the scroll so even a
+    // fast scroller gets to sit on the big picture. One-shot per pass,
+    // re-arms when scrolled back up.
+    let caught = false;
+    const catchFrame = (self) => {
+      if (self.direction === 1 && !caught && self.progress > 0.63) {
+        caught = true;
+        scrollLock.lock('roll');
+        gsap.delayedCall(CONFIG.rollHold, () => scrollLock.unlock('roll'));
+      }
+      if (self.progress < 0.5) caught = false;
+    };
+
+    gsap.timeline({
+      defaults: { ease: 'none' },
+      scrollTrigger: {
+        trigger: stage, start: 'top top', end: CONFIG.dollyLength,
+        pin: true, scrub: 0.7, anticipatePin: 1,
+        onLeaveBack: () => { gsap.set(head, { autoAlpha: 0 }); caught = false; },
+        onUpdate: (self) => { bloom(self.progress > 0.55); revealThumbs(self.progress > 0.6); catchFrame(self); }
+      }
+    })
+      // choreography compressed into 0 → ~0.6 …
+      .to(mask, { scale: 1, duration: 0.5 }, 0)
+      .to(img, { scale: 1.06, duration: 0.5 }, 0)
+      .to(head, { autoAlpha: 1, duration: 0.08 }, 0.04)
+      .to(scrim, { opacity: 1, duration: 0.2 }, 0.34)
+      .to(lines, { yPercent: 0, duration: 0.2, stagger: 0.05, ease: 'power2.out' }, 0.44)
+      .to(img, { scale: 1, duration: 0.16 }, 0.5)
+      // … then a full-bleed HOLD fills the rest of the pin before release
+      .to({}, { duration: 0.38 }, 0.62);
+  } else {
+    // reduced-motion: thumbnails shown + clickable, no reveal choreography
+    thumbsWrap.style.pointerEvents = 'auto';
+  }
+}
+
+/* ── LINE-MASK REVEALS (generic, outside the roll) ── */
+document.querySelectorAll('.line-mask .line').forEach((line) => {
+  if (line.closest('.roll')) return;
+  if (reduceMotion) return;
+  gsap.from(line, {
+    yPercent: 115, duration: 1.05, ease: CONFIG.ease,
+    scrollTrigger: { trigger: line.closest('.line-mask'), start: 'top 85%' }
+  });
+});
+
+/* ── SELECTED WORK — one merged section:
+   PHASE 1: as the section enters, the 3 LEAD frames wipe up from the
+            bottom in sequence (Nightfall → Fog → Still Water).
+   PHASE 2: the section pins and the whole track scrubs horizontally,
+            carrying those frames left and bringing the rest in.
+   On touch / narrow / reduced-motion it degrades to a native
+   horizontal-scroll strip with the frames simply shown. ── */
+{
+  const sec = document.getElementById('featured');
+  const track = sec.querySelector('.feat-track');
+  const leadMedias = gsap.utils.toArray('#featured .feat-card.lead .feat-media');
+  const leadCaps = gsap.utils.toArray('#featured .feat-card.lead .feat-cap');
+  const desktop = window.matchMedia('(min-width: 900px)').matches;
+
+  if (reduceMotion || !desktop) {
+    gsap.set(leadMedias, { clipPath: 'inset(0 0 0 0)' });        // native scroll, frames visible
+  } else {
+    sec.classList.add('is-pinned');
+
+    // PHASE 1 — the bottom-up sequence on the three lead frames
+    gsap.set(leadMedias, { clipPath: 'inset(100% 0 0 0)' });
+    gsap.set('#featured .feat-card.lead .feat-media img', { scale: 1.14 });
+    gsap.set(leadCaps, { yPercent: 45, autoAlpha: 0 });
+    ScrollTrigger.create({
+      trigger: sec, start: 'top 60%', once: true,
+      onEnter: () => {
+        const tl = gsap.timeline();
+        leadMedias.forEach((m, i) => {
+          const img = m.querySelector('img');
+          const at = i * 0.3;                                    // the sequence gap
+          tl.to(m, { clipPath: 'inset(0% 0 0 0)', duration: 1.0, ease: CONFIG.ease }, at)
+            .to(img, { scale: 1, duration: 1.1, ease: CONFIG.ease }, at)
+            .set(img, { clearProps: 'transform' }, at + 1.1)     // hand scale back to CSS hover
+            .to(leadCaps[i], { yPercent: 0, autoAlpha: 1, duration: 0.7, ease: CONFIG.ease }, at + 0.3);
+        });
+      }
+    });
+
+    // PHASE 2 — pin + horizontal scrub (starts once the section is at the
+    // top, i.e. after the entrance reveal has played out)
+    const overflow = () => Math.max(0, track.scrollWidth - window.innerWidth);
+
+    // THE SNAP HOLD — the instant the section locks to the top we stop the
+    // scroll for a beat, so the three lead frames read as a composition
+    // before the track starts carrying them left. Same trick as the roll's
+    // full-bleed catch. One-shot per pass; re-arms on scrolling back up.
+    let held = false;
+    const holdOnPin = (self) => {
+      if (held || !CONFIG.featHold) return;
+      held = true;
+      scrollLock.lock('feat');
+      // Kill the overshoot. A scroller crosses the pin line mid-frame, so the
+      // scrub would spend the whole hold easing the track left to catch up —
+      // the horizontal move would creep instead of waiting. Snapping scroll
+      // back to the pin start is invisible (the section is pinned, nothing
+      // moves vertically) and parks the scrub target at x = 0 for the beat.
+      // +1px keeps us off the boundary so onLeaveBack can't re-fire.
+      lenis.scrollTo(self.start + 1, { immediate: true, force: true });
+      gsap.delayedCall(CONFIG.featHold, () => scrollLock.unlock('feat'));
+    };
+
+    gsap.to(track, {
+      x: () => -overflow(), ease: 'none',
+      scrollTrigger: {
+        trigger: sec, start: 'top top', end: () => '+=' + overflow(),
+        pin: true, scrub: 0.6, invalidateOnRefresh: true,
+        onEnter: holdOnPin,                    // downward entry only
+        onLeaveBack: () => { held = false; }   // scrolled back above the pin
+      }
+    });
+  }
+}
+
+/* ── RECOGNITION logo marquee loop (velocity handled in lenis scroll) ── */
+if (!reduceMotion) {
+  mqTl = gsap.to('.mq-track', { xPercent: -50, repeat: -1, duration: CONFIG.marqueeDuration, ease: 'none' });
+}
+
+/* ── ABOUT + RECOGNITION + FOOTER — fade-rise reveals on scroll-in.
+   Each [data-fade] element (and the About portrait) eases up as its
+   section enters; grouped so items in a section stagger together. ── */
+if (!reduceMotion) {
+  ['#about-teaser', '#recognition', 'footer'].forEach((sel) => {
+    const sec = document.querySelector(sel);
+    if (!sec) return;
+    const fades = sec.querySelectorAll('[data-fade]');
+    if (fades.length) {
+      gsap.to(fades, {
+        opacity: 1, y: 0, duration: 0.9, stagger: 0.1, ease: CONFIG.ease,
+        scrollTrigger: { trigger: sec, start: 'top 80%' }
+      });
+    }
+  });
+  // the About portrait wipes up from the bottom as the section arrives
+  const abImg = document.querySelector('.ab-portrait');
+  if (abImg) {
+    gsap.from(abImg, {
+      clipPath: 'inset(100% 0 0 0)', duration: 1.1, ease: CONFIG.ease,
+      scrollTrigger: { trigger: '#about-teaser', start: 'top 78%' }
+    });
+  }
+}
+
+/* ── JOURNAL — the notes deal in one after another as the section enters ── */
+if (!reduceMotion) {
+  gsap.from('#journal-teaser .jt-row', {
+    y: 40, autoAlpha: 0, duration: 0.85, stagger: 0.09, ease: CONFIG.ease,
+    clearProps: 'opacity,visibility,transform',
+    scrollTrigger: { trigger: '#journal-teaser .jt-rows', start: 'top 82%' }
+  });
+}
+
+/* ── MAGNETIC buttons — lean toward the pointer, desktop only ── */
+if (finePointer && !reduceMotion) {
+  document.querySelectorAll('.magnetic').forEach((el) => {
+    el.addEventListener('pointermove', (e) => {
+      const r = el.getBoundingClientRect();
+      gsap.to(el, { x: (e.clientX - r.left - r.width / 2) * 0.3, y: (e.clientY - r.top - r.height / 2) * 0.4, duration: 0.6, ease: 'power3.out' });
+    });
+    el.addEventListener('pointerleave', () => gsap.to(el, { x: 0, y: 0, duration: 0.7, ease: 'power3.out' }));
+  });
+}
+
+/* ── CURSOR — aperture ring + exposure readout ── */
+if (finePointer && !reduceMotion) {
+  const cur = document.getElementById('cursor');
+  const read = document.getElementById('cur-read');
+  cur.style.display = 'block';
+  document.body.style.cursor = 'none';
+  document.querySelectorAll('a, button').forEach((el) => el.style.cursor = 'none');
+  const xTo = gsap.quickTo(cur, 'x', { duration: 0.16, ease: 'power3.out' });
+  const yTo = gsap.quickTo(cur, 'y', { duration: 0.16, ease: 'power3.out' });
+  const APERTURES = ['1.4', '2', '2.8', '4', '5.6', '8', '11', '16'];
+  const SHUTTERS = ['1/30', '1/60', '1/125', '1/250', '1/500', '1/1000'];
+  window.addEventListener('mousemove', (e) => {
+    xTo(e.clientX); yTo(e.clientY);
+    const a = APERTURES[Math.max(0, Math.min(APERTURES.length - 1, Math.floor(e.clientY / window.innerHeight * APERTURES.length)))];
+    const s = SHUTTERS[Math.max(0, Math.min(SHUTTERS.length - 1, Math.floor(e.clientX / window.innerWidth * SHUTTERS.length)))];
+    read.textContent = 'f/' + a + ' · ' + s;
+  });
+  document.querySelectorAll('a, button, .jt-row').forEach((el) => {
+    el.addEventListener('mouseenter', () => gsap.to('.cur-ring', { scale: 1.6, duration: 0.3, ease: CONFIG.ease }));
+    el.addEventListener('mouseleave', () => gsap.to('.cur-ring', { scale: 1, duration: 0.3, ease: CONFIG.ease }));
+  });
+}
+
+/* ── stale-position healers ── */
+window.addEventListener('load', () => ScrollTrigger.refresh());
+{
+  let healT = null;
+  const heal = () => { clearTimeout(healT); healT = setTimeout(() => ScrollTrigger.refresh(), 200); };
+  document.querySelectorAll('img[loading="lazy"]').forEach((img) => {
+    if (!img.complete) img.addEventListener('load', heal, { once: true });
+  });
+}

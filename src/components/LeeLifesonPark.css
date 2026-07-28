@@ -1,0 +1,129 @@
+/* ═══ LEE LIFESON ART PARK SECTION ═══ */
+
+.parkSection {
+  background: var(--vantablack);
+  padding: var(--space-3xl) var(--space-lg);
+}
+
+.park__inner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.park__heading {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 200;
+  line-height: 1.15;
+  margin-bottom: var(--space-sm);
+}
+
+.park__location {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--silver-dark);
+  margin-bottom: var(--space-lg);
+}
+
+.park__intro {
+  font-size: 1.05rem;
+  font-weight: 300;
+  color: var(--silver-mid);
+  max-width: 700px;
+  margin-bottom: var(--space-xl);
+  line-height: 1.8;
+}
+
+/* Feature Grid */
+.park__features {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
+}
+
+.park__feature-card {
+  padding: var(--space-xl) var(--space-lg);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.park__feature-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.02) 0%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+.park__feature-icon {
+  font-size: 2rem;
+  margin-bottom: var(--space-sm);
+  opacity: 0.6;
+}
+
+.park__feature-card h4 {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--silver-bright);
+}
+
+.park__feature-card p {
+  font-size: 0.9rem;
+  font-weight: 300;
+  color: var(--silver-dark);
+  line-height: 1.7;
+}
+
+/* Closing Quote */
+.park__closing {
+  max-width: 750px;
+  margin: 0 auto;
+  text-align: center;
+  padding: var(--space-xl) 0;
+}
+
+.park__quote {
+  font-family: var(--font-display);
+  font-size: clamp(1.2rem, 2.5vw, 1.6rem);
+  font-weight: 200;
+  font-style: italic;
+  color: var(--silver-mid);
+  line-height: 1.6;
+  margin-bottom: var(--space-md);
+}
+
+.park__quote-dash {
+  display: inline-block;
+  width: 40px;
+  height: 1px;
+  background: var(--silver-dark);
+  vertical-align: middle;
+  margin: 0 var(--space-sm);
+}
+
+.park__quote-source {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--silver-dark);
+}
+
+@media (max-width: 768px) {
+  .park__features {
+    grid-template-columns: 1fr;
+  }
+}

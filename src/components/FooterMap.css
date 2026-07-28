@@ -1,0 +1,210 @@
+/* ═══ FOOTER MAP SECTION ═══ */
+
+.routeFooter {
+  background: var(--carbon);
+  padding: var(--space-3xl) var(--space-lg) var(--space-lg);
+  position: relative;
+}
+
+.footer__inner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.footer__heading {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 200;
+  text-align: center;
+  margin-bottom: var(--space-xl);
+}
+
+/* SVG Circuit-Board Map */
+.circuit-map {
+  width: 100%;
+  aspect-ratio: 16 / 7;
+  background: var(--obsidian);
+  border-radius: 16px;
+  border: 1px solid var(--glass-border);
+  overflow: hidden;
+  position: relative;
+  margin-bottom: var(--space-xl);
+}
+
+.circuit-map__svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Circuit path animation */
+.circuit-path {
+  fill: none;
+  stroke: url(#silverGradient);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 1200;
+  stroke-dashoffset: 1200;
+  filter: drop-shadow(0 0 4px rgba(200, 200, 200, 0.3));
+}
+
+.circuit-path.animated {
+  animation: draw-circuit 3s var(--ease-luxury) forwards;
+}
+
+@keyframes draw-circuit {
+  to { stroke-dashoffset: 0; }
+}
+
+/* Map nodes */
+.circuit-node {
+  fill: var(--vantablack);
+  stroke: var(--silver-mid);
+  stroke-width: 1.5;
+  transition: all var(--duration-medium) var(--ease-luxury);
+}
+
+.circuit-node:hover {
+  fill: rgba(255, 255, 255, 0.1);
+  stroke: var(--silver-bright);
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.4));
+}
+
+.circuit-node-center {
+  fill: var(--silver-bright);
+  opacity: 0;
+}
+
+.circuit-node-center.animated {
+  animation: node-appear 0.3s var(--ease-luxury) forwards;
+}
+
+@keyframes node-appear {
+  to { opacity: 1; }
+}
+
+.circuit-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  fill: var(--silver-dark);
+  letter-spacing: 1px;
+}
+
+.circuit-label-number {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  fill: var(--silver-dark);
+  opacity: 0.5;
+}
+
+/* Grid dots background */
+.circuit-map__grid {
+  opacity: 0.03;
+}
+
+/* Route Steps Timeline */
+.route-steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-md);
+  margin-bottom: var(--space-3xl);
+}
+
+.route-step {
+  padding: var(--space-lg);
+  border-radius: 8px;
+  position: relative;
+  text-align: center;
+  transition: all var(--duration-medium) var(--ease-luxury);
+}
+
+.route-step:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.route-step__number {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  font-weight: 800;
+  opacity: 0.08;
+  position: absolute;
+  top: var(--space-sm);
+  left: var(--space-md);
+}
+
+.route-step__name {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--silver-bright);
+  margin-bottom: var(--space-xs);
+}
+
+.route-step__desc {
+  font-size: 0.75rem;
+  font-weight: 300;
+  color: var(--silver-dark);
+  line-height: 1.5;
+}
+
+/* Connector arrows between steps */
+.route-step:not(:last-child)::after {
+  content: '→';
+  position: absolute;
+  right: -14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.8rem;
+  color: var(--silver-dark);
+  opacity: 0.3;
+}
+
+/* Footer Bottom */
+.footer__bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: var(--space-lg);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.footer__copyright {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 2px;
+  color: var(--silver-dark);
+  text-transform: uppercase;
+}
+
+.footer__edition {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 2px;
+  color: var(--silver-dark);
+}
+
+@media (max-width: 768px) {
+  .route-steps {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .route-step:not(:last-child)::after {
+    display: none;
+  }
+
+  .circuit-map {
+    aspect-ratio: 4 / 3;
+  }
+}
+
+@media (max-width: 480px) {
+  .route-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .footer__bottom {
+    flex-direction: column;
+    gap: var(--space-sm);
+    text-align: center;
+  }
+}

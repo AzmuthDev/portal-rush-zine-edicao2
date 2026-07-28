@@ -1,0 +1,14 @@
+(function(){
+var ASSET_MAP = {"https://halide.aura.build/": "assets/18a173b433c0376f_file.html", "https://cdn.jsdelivr.net/npm/iconify-icon@2.1.0/dist/iconify-icon.min.js": "assets/758d94838db0cafd_iconify-icon.min.js", "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap": "assets/f32c4a47e91d6996_css2.css", "https://halide.aura.build/assets/index-0r22Ynqq.css": "assets/ea64d2a49081751f_index-0r22Ynqq.css", "https://fonts.googleapis.com/css2?family=Geist:wght@30
+---
+
+/* ═══════════════════════════════════════════════════════════════
+   HALIDE — HOME · TUNING
+   ═══════════════════════════════════════════════════════════════ */
+const CONFIG = {
+  scrollLerp: 0.09,        // Lenis weight — lower = heavier
+  ease: 'expo.out',        // ONE easing personality
+  loaderDuration: 1.4,     // roll count-up time (s)
+  dollyStart: 0.34,        // roll frame's initial size
+  dollyLength: '+=200%',   // scroll consumed by the roll pin
+  rollHold: 0.5,           // forc
