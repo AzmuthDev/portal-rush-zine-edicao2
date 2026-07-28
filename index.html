@@ -2394,12 +2394,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         var delayToStart = (time - audioCtx.currentTime) * 1000;
         setTimeout(function() {
-          el.classList.add('red');
-          el.style.textShadow = '0 0 15px var(--red, #ff3300)';
+          el.style.color = '#ff0000';
+          el.style.textShadow = '0 0 20px #ff0000';
         }, delayToStart);
         
         setTimeout(function() {
-          el.classList.remove('red');
+          el.style.color = '';
           el.style.textShadow = 'none';
         }, delayToStart + duration);
         
