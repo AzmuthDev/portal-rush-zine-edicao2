@@ -2342,4 +2342,79 @@ var go = function(){
 };
 if (document.readyState === 'complete') go();
 else window.addEventListener('load', go);
-})();</script></body></html>
+})();</script>
+
+<!-- ░░ INTERACTIVE YYZ MORSE EGG ░░ -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var trigger = document.querySelector('.hero-dot');
+  if (!trigger) return;
+  trigger.style.cursor = 'pointer';
+  trigger.title = 'Clique para escutar YYZ';
+  var isPlaying = false;
+  
+  trigger.addEventListener('click', function() {
+    if (isPlaying) return;
+    isPlaying = true;
+    
+    var AudioContext = window.AudioContext || window.webkitAudioContext;
+    var audioCtx = new AudioContext();
+    var morseLine = document.querySelector('.hero-mask .hero-line');
+    if (!morseLine) return;
+    
+    var chars = Array.from(morseLine.querySelectorAll('.hl-ch'));
+    
+    var dotDuration = 120; // duração de um ponto
+    var dashDuration = dotDuration * 3; // traço é 3x o ponto
+    var symbolGap = dotDuration; // gap entre simbolos
+    var letterGap = dotDuration * 3; // gap entre letras
+    
+    var time = audioCtx.currentTime + 0.1;
+    
+    chars.forEach(function(el) {
+      var txt = el.textContent;
+      if (txt === '-' || txt === '.') {
+        var duration = (txt === '-') ? dashDuration : dotDuration;
+        
+        var osc = audioCtx.createOscillator();
+        var gainNode = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, time);
+        
+        gainNode.gain.setValueAtTime(0, time);
+        gainNode.gain.linearRampToValueAtTime(0.5, time + 0.01);
+        gainNode.gain.setValueAtTime(0.5, time + (duration/1000) - 0.01);
+        gainNode.gain.linearRampToValueAtTime(0, time + (duration/1000));
+        
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        osc.start(time);
+        osc.stop(time + (duration/1000));
+        
+        var delayToStart = (time - audioCtx.currentTime) * 1000;
+        setTimeout(function() {
+          el.classList.add('red');
+          el.style.textShadow = '0 0 15px var(--red, #ff3300)';
+        }, delayToStart);
+        
+        setTimeout(function() {
+          el.classList.remove('red');
+          el.style.textShadow = 'none';
+        }, delayToStart + duration);
+        
+        time += (duration + symbolGap) / 1000;
+      } else if (txt === '\u00A0' || txt === ' ' || txt === '') {
+        if (el !== trigger) {
+          time += (letterGap / 1000);
+        }
+      }
+    });
+    
+    setTimeout(function() {
+      isPlaying = false;
+    }, (time - audioCtx.currentTime) * 1000);
+  });
+});
+</script>
+</body></html>
