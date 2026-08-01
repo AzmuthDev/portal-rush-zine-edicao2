@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAudioController } from '../hooks/useEffects';
 import './Hero.css';
+import videoTour from '../../Video_Tour.mp4';
 
 export default function Hero() {
   const { airportRef, cymbalRef, play } = useAudioController();
@@ -13,6 +14,8 @@ export default function Hero() {
 
   return (
     <section id="hero" className="hero">
+      <video className="hero__video" src={videoTour} autoPlay loop muted playsInline />
+
       {/* Audio elements — place real files in /public/audio/ */}
       <audio ref={airportRef} src="/audio/airport-ambience.mp3" loop preload="none" />
       <audio ref={cymbalRef} src="/audio/ride-cymbal.mp3" loop preload="none" />
